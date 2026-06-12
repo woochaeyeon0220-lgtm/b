@@ -2,7 +2,7 @@
 // 오늘 뭐 먹지? - 배달 메뉴 추천 웹앱
 //  - Firebase Authentication: 이메일/비밀번호 로그인
 //  - Firebase Realtime Database: 최근 먹은 메뉴, 공지사항 (용량 최소화: 짧은 키 사용)
-//  - Claude API: 기분/예산/인원 기반 메뉴 추천
+//  - 추천: 내장 메뉴 데이터베이스 기반 (외부 API 사용 안 함, 비용 0)
 // ============================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -32,37 +32,7 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 
 // ------------------------------------------------------------
-// Claude API 설정
-// 비용을 더 아끼고 싶으면 MODEL을 "claude-haiku-4-5"로 바꾸세요.
-// ------------------------------------------------------------
-const MODEL = "claude-opus-4-8";
-const API_KEY_STORAGE = "claude_api_key";
-
-// 응답을 항상 JSON으로 받기 위한 스키마 (structured outputs)
-const MENU_SCHEMA = {
-  type: "object",
-  properties: {
-    menus: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          name: { type: "string" },
-          category: { type: "string" },
-          price: { type: "integer" },
-          reason: { type: "string" },
-        },
-        required: ["name", "category", "price", "reason"],
-        additionalProperties: false,
-      },
-    },
-  },
-  required: ["menus"],
-  additionalProperties: false,
-};
-
-// ------------------------------------------------------------
-// 내장 메뉴 데이터베이스 (1인 기준 가격, API 키 없이도 추천 가능)
+// 내장 메뉴 데이터베이스 (1인 기준 가격)
 // moods: 어떤 기분 버튼에 추천될지 태그
 // ------------------------------------------------------------
 const MENU_DB = [
@@ -149,25 +119,6 @@ let currentUser = null;
 let recentCache = []; // [{key, n, d}] - 최근 먹은 메뉴 로컬 캐시 (DB 읽기 최소화)
 let detachFns = []; // 로그아웃 시 해제할 리스너 목록
 let editingNoticeKey = null;
-
-// ------------------------------------------------------------
-// API 키 관리 (Firebase가 아닌 브라우저 localStorage에 저장 → DB 용량 0)
-// ------------------------------------------------------------
-$("api-key-input").value = localStorage.getItem(API_KEY_STORAGE) || "";
-
-$("api-key-save").addEventListener("click", () => {
-  const key = $("api-key-input").value.trim();
-  if (!key) {
-    toast("API 키를 입력해주세요.");
-    return;
-  }
-  localStorage.setItem(API_KEY_STORAGE, key);
-  toast("API 키가 이 브라우저에 저장되었습니다.");
-});
-
-function getApiKey() {
-  return ($("api-key-input").value || "").trim() || localStorage.getItem(API_KEY_STORAGE) || "";
-}
 
 // ------------------------------------------------------------
 // 로그인 / 회원가입
@@ -306,61 +257,10 @@ function peopleToNumber(people) {
 }
 
 // ------------------------------------------------------------
-// Claude API 호출 - 메뉴 추천
-// ------------------------------------------------------------
-async function requestRecommendation(mood, budget, people, recentNames) {
-  const apiKey = getApiKey();
-  if (!apiKey) throw new Error("NO_KEY");
-
-  const avoid =
-    recentNames.length > 0
-      ? `\n최근에 먹은 메뉴: ${recentNames.join(", ")} → 이 메뉴들과 겹치지 않게 추천해줘.`
-      : "";
-
-  const userPrompt =
-    `한국에서 배달 가능한 음식 메뉴를 3~5개 추천해줘.\n` +
-    `- 기분/카테고리: ${mood}\n` +
-    `- 총 예산: ${budget.toLocaleString()}원 (배달비 포함이므로 음식 가격은 예산보다 3,000~4,000원 정도 여유 있게)\n` +
-    `- 인원: ${people}` +
-    avoid +
-    `\n각 메뉴는 name(메뉴명), category(카테고리), price(인원수에 맞는 예상 총 가격, 원 단위 숫자), reason(한 줄 추천 이유)로 답해줘. ` +
-    `price는 반드시 예산 안에 들어야 해.`;
-
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 2048,
-      system:
-        "너는 한국 배달 음식 추천 전문가야. 실제로 배달 앱에서 주문 가능한 현실적인 메뉴와 가격을 제시해.",
-      output_config: { format: { type: "json_schema", schema: MENU_SCHEMA } },
-      messages: [{ role: "user", content: userPrompt }],
-    }),
-  });
-
-  if (!res.ok) {
-    if (res.status === 401) throw new Error("API 키가 올바르지 않습니다. 상단에서 키를 확인해주세요.");
-    if (res.status === 429) throw new Error("요청이 너무 많습니다. 잠시 후 다시 시도해주세요.");
-    if (res.status === 529) throw new Error("AI 서버가 혼잡합니다. 잠시 후 다시 시도해주세요.");
-    throw new Error(`AI 요청에 실패했습니다. (오류 코드 ${res.status})`);
-  }
-
-  const data = await res.json();
-  const textBlock = data.content.find((b) => b.type === "text");
-  return JSON.parse(textBlock.text).menus;
-}
-
-// ------------------------------------------------------------
-// 내장 추천 (API 키 없이 동작, 비용 0)
+// 메뉴 추천 (내장 데이터 기반)
 // 기분 → 예산 → 최근 먹은 메뉴 순으로 필터링 후 3~5개 추첨
 // ------------------------------------------------------------
-function localRecommend(mood, budget, count, recentNames) {
+function recommendMenus(mood, budget, count, recentNames) {
   const recent = new Set(recentNames);
   const pool = MENU_DB.filter((m) => m.moods.includes(mood));
 
@@ -384,7 +284,7 @@ function localRecommend(mood, budget, count, recentNames) {
   }));
 }
 
-$("recommend-btn").addEventListener("click", async () => {
+$("recommend-btn").addEventListener("click", () => {
   const mood = getSelected("mood-group", "mood");
   const budget = parseInt($("budget-input").value, 10);
   const people = getSelected("people-group", "people");
@@ -393,40 +293,16 @@ $("recommend-btn").addEventListener("click", async () => {
   if (!budget || budget <= 0) return toast("예산을 입력해주세요.");
   if (!people) return toast("인원수를 선택해주세요.");
 
-  const section = $("result-section");
-  const loading = $("result-loading");
-  const cards = $("result-cards");
   const recentNames = recentCache.map((r) => r.n);
-  const useAI = !!getApiKey(); // 키가 있으면 AI 추천, 없으면 내장 추천
+  const menus = recommendMenus(mood, budget, peopleToNumber(people), recentNames);
 
-  section.classList.remove("hidden");
-  cards.replaceChildren();
-  section.scrollIntoView({ behavior: "smooth", block: "nearest" });
-
-  if (!useAI) {
-    renderMenuCards(localRecommend(mood, budget, peopleToNumber(people), recentNames));
-    toast("기본 추천입니다. API 키를 입력하면 AI 맞춤 추천을 받을 수 있어요.");
-    return;
-  }
-
-  loading.classList.remove("hidden");
-  $("recommend-btn").disabled = true;
-
-  try {
-    const menus = await requestRecommendation(mood, budget, people, recentNames);
-    renderMenuCards(menus);
-  } catch (err) {
-    // AI 호출 실패 시 내장 추천으로 대체
-    renderMenuCards(localRecommend(mood, budget, peopleToNumber(people), recentNames));
-    toast(`AI 추천에 실패해 기본 추천을 보여드려요. (${err.message})`);
-  } finally {
-    loading.classList.add("hidden");
-    $("recommend-btn").disabled = false;
-  }
+  $("result-section").classList.remove("hidden");
+  renderMenuCards(menus);
+  $("result-section").scrollIntoView({ behavior: "smooth", block: "nearest" });
 });
 
 // ------------------------------------------------------------
-// 오늘의 랜덤 메뉴 (AI 호출 없이 즉시, 비용 0)
+// 오늘의 랜덤 메뉴 (기분 상관없이 전체에서 추첨)
 // ------------------------------------------------------------
 $("random-btn").addEventListener("click", () => {
   const budget = parseInt($("budget-input").value, 10);

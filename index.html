@@ -8,14 +8,10 @@
 </head>
 <body>
 
-  <!-- 상단 헤더: 로고 + API 키 입력 -->
+  <!-- 상단 헤더 -->
   <header class="header">
     <div class="header-inner">
       <h1 class="logo">🍽️ 오늘 뭐 먹지?</h1>
-      <div class="api-key-bar">
-        <input type="password" id="api-key-input" placeholder="(선택) Claude API 키 - 없어도 추천 가능" autocomplete="off" />
-        <button id="api-key-save" class="btn btn-small">저장</button>
-      </div>
       <button id="logout-btn" class="btn btn-small btn-outline hidden">로그아웃</button>
     </div>
   </header>
@@ -81,10 +77,6 @@
       <!-- 추천 결과 영역 -->
       <div class="card hidden" id="result-section">
         <h2 class="card-title">✨ 추천 메뉴</h2>
-        <div id="result-loading" class="loading hidden">
-          <div class="spinner"></div>
-          <p>AI가 메뉴를 고르는 중...</p>
-        </div>
         <div id="result-cards" class="menu-cards"></div>
       </div>
 
