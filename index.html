@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>오늘 뭐 먹지? - 배달 메뉴 추천</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- 상단 헤더: 로고 + API 키 입력 -->
+  <header class="header">
+    <div class="header-inner">
+      <h1 class="logo">🍽️ 오늘 뭐 먹지?</h1>
+      <div class="api-key-bar">
+        <input type="password" id="api-key-input" placeholder="Claude API 키 입력 (sk-ant-...)" autocomplete="off" />
+        <button id="api-key-save" class="btn btn-small">저장</button>
+      </div>
+      <button id="logout-btn" class="btn btn-small btn-outline hidden">로그아웃</button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ===== 로그인 / 회원가입 화면 ===== -->
+    <section id="auth-view" class="hidden">
+      <div class="card auth-card">
+        <div class="auth-tabs">
+          <button id="tab-login" class="auth-tab active">로그인</button>
+          <button id="tab-signup" class="auth-tab">회원가입</button>
+        </div>
+        <div class="auth-form">
+          <input type="email" id="auth-email" placeholder="이메일" autocomplete="email" />
+          <input type="password" id="auth-password" placeholder="비밀번호" autocomplete="current-password" />
+          <p class="hint" id="password-hint">비밀번호는 8자 이상, 영문 + 숫자 + 기호를 모두 포함해야 합니다.</p>
+          <button id="auth-submit" class="btn btn-primary btn-big">로그인</button>
+          <p class="auth-error" id="auth-error"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 일반 유저 화면 ===== -->
+    <section id="user-view" class="hidden">
+
+      <!-- 공지사항 -->
+      <div class="card" id="notice-section">
+        <h2 class="card-title">📢 공지사항</h2>
+        <ul id="notice-list" class="notice-list">
+          <li class="empty-text">등록된 공지사항이 없습니다.</li>
+        </ul>
+      </div>
+
+      <!-- 입력 영역 -->
+      <div class="card">
+        <h2 class="card-title">🤔 오늘의 조건</h2>
+
+        <label class="field-label">기분 / 카테고리</label>
+        <div class="chip-group" id="mood-group">
+          <button class="chip" data-mood="든든하게">🍚 든든하게</button>
+          <button class="chip" data-mood="가볍게">🥗 가볍게</button>
+          <button class="chip" data-mood="매운 거">🌶️ 매운 거</button>
+          <button class="chip" data-mood="달달한 거">🍰 달달한 거</button>
+        </div>
+
+        <label class="field-label" for="budget-input">예산 (배달비 포함, 원)</label>
+        <input type="number" id="budget-input" class="text-input" placeholder="예: 20000" min="0" step="1000" inputmode="numeric" />
+
+        <label class="field-label">인원수</label>
+        <div class="chip-group" id="people-group">
+          <button class="chip" data-people="1인">1인</button>
+          <button class="chip" data-people="2인">2인</button>
+          <button class="chip" data-people="3인 이상">3인 이상</button>
+        </div>
+
+        <div class="btn-row">
+          <button id="recommend-btn" class="btn btn-primary btn-big">🍴 메뉴 추천받기</button>
+          <button id="random-btn" class="btn btn-secondary btn-big">🎲 오늘의 랜덤 메뉴</button>
+        </div>
+      </div>
+
+      <!-- 추천 결과 영역 -->
+      <div class="card hidden" id="result-section">
+        <h2 class="card-title">✨ 추천 메뉴</h2>
+        <div id="result-loading" class="loading hidden">
+          <div class="spinner"></div>
+          <p>AI가 메뉴를 고르는 중...</p>
+        </div>
+        <div id="result-cards" class="menu-cards"></div>
+      </div>
+
+      <!-- 최근 먹은 메뉴 영역 -->
+      <div class="card">
+        <h2 class="card-title">🕘 최근 먹은 메뉴 <span class="hint-inline">(최대 7개, 중복 추천 방지에 사용)</span></h2>
+        <ul id="recent-list" class="recent-list">
+          <li class="empty-text">아직 기록이 없습니다.</li>
+        </ul>
+      </div>
+
+    </section>
+
+    <!-- ===== 관리자 화면 ===== -->
+    <section id="admin-view" class="hidden">
+      <div class="card admin-banner">
+        <h2>🛠️ 관리자 모드</h2>
+        <p>공지사항을 작성하면 일반 유저 메인 화면에 표시됩니다.</p>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title" id="admin-form-title">공지사항 작성</h2>
+        <input type="text" id="admin-notice-title" class="text-input" placeholder="공지 제목" maxlength="50" />
+        <textarea id="admin-notice-content" class="text-input" rows="4" placeholder="공지 내용" maxlength="500"></textarea>
+        <div class="btn-row">
+          <button id="admin-notice-submit" class="btn btn-primary btn-big">등록하기</button>
+          <button id="admin-notice-cancel" class="btn btn-outline btn-big hidden">수정 취소</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">등록된 공지사항</h2>
+        <ul id="admin-notice-list" class="notice-list admin">
+          <li class="empty-text">등록된 공지사항이 없습니다.</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
