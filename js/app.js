@@ -61,28 +61,59 @@ const MENU_SCHEMA = {
   additionalProperties: false,
 };
 
-// 랜덤 메뉴 후보 (1인 기준 가격, 배달비 제외 대략값)
-const RANDOM_MENUS = [
-  { name: "치킨", category: "치킨", price: 20000, reason: "고민될 땐 역시 국민 야식 치킨!" },
-  { name: "김치찌개", category: "한식", price: 9000, reason: "얼큰하고 든든한 기본 한 끼." },
-  { name: "제육볶음", category: "한식", price: 10000, reason: "밥 두 공기 부르는 매콤달콤 제육." },
-  { name: "마라탕", category: "중식", price: 13000, reason: "얼얼하게 스트레스 날리기 좋아요." },
-  { name: "짜장면", category: "중식", price: 8000, reason: "실패 없는 클래식 중식." },
-  { name: "초밥", category: "일식", price: 15000, reason: "가볍지만 만족스러운 한 끼." },
-  { name: "돈카츠", category: "일식", price: 11000, reason: "바삭바삭 든든한 일식 정식." },
-  { name: "햄버거", category: "양식", price: 9000, reason: "빠르고 간편하게 든든하게." },
-  { name: "파스타", category: "양식", price: 13000, reason: "기분 내고 싶은 날의 선택." },
-  { name: "피자", category: "양식", price: 22000, reason: "여럿이 나눠 먹기 최고." },
-  { name: "떡볶이", category: "분식", price: 12000, reason: "매콤달콤, 영원한 분식의 왕." },
-  { name: "김밥+라면", category: "분식", price: 7000, reason: "저렴하고 빠른 국민 조합." },
-  { name: "쌀국수", category: "아시안", price: 11000, reason: "속 편하고 따뜻한 국물 요리." },
-  { name: "보쌈", category: "한식", price: 28000, reason: "푸짐하게 고기가 당기는 날." },
-  { name: "샐러드", category: "샐러드", price: 10000, reason: "가볍게 챙기는 건강한 한 끼." },
-  { name: "족발", category: "한식", price: 30000, reason: "쫄깃한 족발에 새콤한 막국수까지." },
-  { name: "닭갈비", category: "한식", price: 12000, reason: "매콤한 닭갈비에 볶음밥 마무리." },
-  { name: "카레", category: "일식", price: 9000, reason: "부담 없이 든든한 한 그릇." },
-  { name: "버블티+토스트", category: "디저트", price: 8000, reason: "달달한 게 당기는 날의 간식 세트." },
-  { name: "와플+아이스크림", category: "디저트", price: 9000, reason: "당 충전이 필요한 순간!" },
+// ------------------------------------------------------------
+// 내장 메뉴 데이터베이스 (1인 기준 가격, API 키 없이도 추천 가능)
+// moods: 어떤 기분 버튼에 추천될지 태그
+// ------------------------------------------------------------
+const MENU_DB = [
+  // 든든하게
+  { name: "치킨", category: "치킨", price: 20000, moods: ["든든하게"], reason: "고민될 땐 역시 국민 야식 치킨!" },
+  { name: "제육볶음", category: "한식", price: 10000, moods: ["든든하게", "매운 거"], reason: "밥 두 공기 부르는 매콤달콤 제육." },
+  { name: "돼지국밥", category: "한식", price: 10000, moods: ["든든하게"], reason: "뜨끈한 국물에 밥 말아 든든하게." },
+  { name: "돈카츠", category: "일식", price: 11000, moods: ["든든하게"], reason: "바삭바삭 든든한 일식 정식." },
+  { name: "보쌈", category: "한식", price: 28000, moods: ["든든하게"], reason: "푸짐하게 고기가 당기는 날." },
+  { name: "족발", category: "한식", price: 30000, moods: ["든든하게"], reason: "쫄깃한 족발에 새콤한 막국수까지." },
+  { name: "피자", category: "양식", price: 22000, moods: ["든든하게"], reason: "여럿이 나눠 먹기 최고." },
+  { name: "햄버거 세트", category: "양식", price: 9000, moods: ["든든하게"], reason: "빠르고 간편하게 든든하게." },
+  { name: "부대찌개", category: "한식", price: 11000, moods: ["든든하게", "매운 거"], reason: "햄과 라면사리가 빠질 수 없지." },
+  { name: "김치찌개", category: "한식", price: 9000, moods: ["든든하게", "매운 거"], reason: "얼큰하고 든든한 기본 한 끼." },
+  { name: "닭갈비", category: "한식", price: 12000, moods: ["든든하게", "매운 거"], reason: "매콤한 닭갈비에 볶음밥 마무리." },
+  { name: "짜장면+탕수육", category: "중식", price: 14000, moods: ["든든하게"], reason: "실패 없는 클래식 중식 조합." },
+  { name: "카레라이스", category: "일식", price: 9000, moods: ["든든하게"], reason: "부담 없이 든든한 한 그릇." },
+  { name: "파스타", category: "양식", price: 13000, moods: ["든든하게"], reason: "기분 내고 싶은 날의 선택." },
+  { name: "우동+미니돈가스", category: "일식", price: 10000, moods: ["든든하게"], reason: "따뜻한 국물과 바삭함을 한 번에." },
+
+  // 가볍게
+  { name: "샐러드 볼", category: "샐러드", price: 10000, moods: ["가볍게"], reason: "가볍게 챙기는 건강한 한 끼." },
+  { name: "초밥", category: "일식", price: 15000, moods: ["가볍게"], reason: "가볍지만 만족스러운 한 끼." },
+  { name: "쌀국수", category: "아시안", price: 11000, moods: ["가볍게"], reason: "속 편하고 따뜻한 국물 요리." },
+  { name: "김밥+라면", category: "분식", price: 7000, moods: ["가볍게"], reason: "저렴하고 빠른 국민 조합." },
+  { name: "샌드위치", category: "카페", price: 8000, moods: ["가볍게"], reason: "간단하지만 알찬 한 끼." },
+  { name: "포케", category: "샐러드", price: 12000, moods: ["가볍게"], reason: "신선한 재료로 가볍고 건강하게." },
+  { name: "연어덮밥", category: "일식", price: 14000, moods: ["가볍게"], reason: "부드러운 연어로 깔끔한 한 끼." },
+  { name: "비빔밥", category: "한식", price: 9000, moods: ["가볍게"], reason: "야채 가득, 속 편한 선택." },
+  { name: "콩나물국밥", category: "한식", price: 8000, moods: ["가볍게"], reason: "시원하고 개운한 해장 겸 한 끼." },
+  { name: "월남쌈", category: "아시안", price: 13000, moods: ["가볍게"], reason: "야채 듬뿍, 가볍게 즐기는 별미." },
+
+  // 매운 거
+  { name: "마라탕", category: "중식", price: 13000, moods: ["매운 거"], reason: "얼얼하게 스트레스 날리기 좋아요." },
+  { name: "떡볶이", category: "분식", price: 12000, moods: ["매운 거"], reason: "매콤달콤, 영원한 분식의 왕." },
+  { name: "불닭", category: "치킨", price: 18000, moods: ["매운 거"], reason: "화끈하게 매운맛이 당길 때." },
+  { name: "짬뽕", category: "중식", price: 10000, moods: ["매운 거", "든든하게"], reason: "얼큰한 국물에 해물 가득." },
+  { name: "쭈꾸미볶음", category: "한식", price: 13000, moods: ["매운 거"], reason: "매콤한 쭈꾸미에 볶음밥은 진리." },
+  { name: "매운 갈비찜", category: "한식", price: 25000, moods: ["매운 거", "든든하게"], reason: "매운맛과 든든함을 동시에." },
+  { name: "닭발", category: "한식", price: 16000, moods: ["매운 거"], reason: "스트레스 확 풀리는 화끈한 맛." },
+  { name: "김치찜", category: "한식", price: 12000, moods: ["매운 거"], reason: "푹 익은 김치와 고기의 조합." },
+
+  // 달달한 거
+  { name: "와플+아이스크림", category: "디저트", price: 9000, moods: ["달달한 거"], reason: "당 충전이 필요한 순간!" },
+  { name: "버블티+토스트", category: "디저트", price: 8000, moods: ["달달한 거"], reason: "달달한 게 당기는 날의 간식 세트." },
+  { name: "조각케이크 세트", category: "디저트", price: 12000, moods: ["달달한 거"], reason: "오늘 하루 고생한 나에게 주는 선물." },
+  { name: "도넛 세트", category: "디저트", price: 10000, moods: ["달달한 거"], reason: "커피와 함께하면 행복 두 배." },
+  { name: "빙수", category: "디저트", price: 13000, moods: ["달달한 거"], reason: "시원하고 달콤한 디저트 한 그릇." },
+  { name: "크로플+음료", category: "디저트", price: 9000, moods: ["달달한 거"], reason: "겉바속촉 크로플의 유혹." },
+  { name: "허니브레드", category: "디저트", price: 10000, moods: ["달달한 거"], reason: "버터와 꿀의 달콤한 조합." },
+  { name: "마카롱+라떼", category: "디저트", price: 11000, moods: ["달달한 거"], reason: "예쁘고 달콤한 오후의 여유." },
 ];
 
 // ------------------------------------------------------------
@@ -325,6 +356,34 @@ async function requestRecommendation(mood, budget, people, recentNames) {
   return JSON.parse(textBlock.text).menus;
 }
 
+// ------------------------------------------------------------
+// 내장 추천 (API 키 없이 동작, 비용 0)
+// 기분 → 예산 → 최근 먹은 메뉴 순으로 필터링 후 3~5개 추첨
+// ------------------------------------------------------------
+function localRecommend(mood, budget, count, recentNames) {
+  const recent = new Set(recentNames);
+  const pool = MENU_DB.filter((m) => m.moods.includes(mood));
+
+  // 1순위: 예산 OK + 최근에 안 먹은 메뉴
+  let candidates = pool.filter((m) => !recent.has(m.name) && m.price * count + 3000 <= budget);
+  // 후보가 부족하면 최근 먹은 메뉴도 허용
+  if (candidates.length < 3) {
+    candidates = pool.filter((m) => m.price * count + 3000 <= budget);
+  }
+  // 그래도 부족하면 예산 조건 완화 (가장 저렴한 순)
+  if (candidates.length < 3) {
+    candidates = [...pool].sort((a, b) => a.price - b.price);
+  }
+
+  const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 5).map((m) => ({
+    name: m.name,
+    category: m.category,
+    price: m.price * count,
+    reason: m.reason,
+  }));
+}
+
 $("recommend-btn").addEventListener("click", async () => {
   const mood = getSelected("mood-group", "mood");
   const budget = parseInt($("budget-input").value, 10);
@@ -333,25 +392,33 @@ $("recommend-btn").addEventListener("click", async () => {
   if (!mood) return toast("기분/카테고리를 선택해주세요.");
   if (!budget || budget <= 0) return toast("예산을 입력해주세요.");
   if (!people) return toast("인원수를 선택해주세요.");
-  if (!getApiKey()) return toast("상단에 Claude API 키를 먼저 입력해주세요.");
 
   const section = $("result-section");
   const loading = $("result-loading");
   const cards = $("result-cards");
+  const recentNames = recentCache.map((r) => r.n);
+  const useAI = !!getApiKey(); // 키가 있으면 AI 추천, 없으면 내장 추천
 
   section.classList.remove("hidden");
-  loading.classList.remove("hidden");
   cards.replaceChildren();
-  $("recommend-btn").disabled = true;
   section.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
+  if (!useAI) {
+    renderMenuCards(localRecommend(mood, budget, peopleToNumber(people), recentNames));
+    toast("기본 추천입니다. API 키를 입력하면 AI 맞춤 추천을 받을 수 있어요.");
+    return;
+  }
+
+  loading.classList.remove("hidden");
+  $("recommend-btn").disabled = true;
+
   try {
-    const recentNames = recentCache.map((r) => r.n);
     const menus = await requestRecommendation(mood, budget, people, recentNames);
     renderMenuCards(menus);
   } catch (err) {
-    toast(err.message === "NO_KEY" ? "API 키를 입력해주세요." : err.message);
-    section.classList.add("hidden");
+    // AI 호출 실패 시 내장 추천으로 대체
+    renderMenuCards(localRecommend(mood, budget, peopleToNumber(people), recentNames));
+    toast(`AI 추천에 실패해 기본 추천을 보여드려요. (${err.message})`);
   } finally {
     loading.classList.add("hidden");
     $("recommend-btn").disabled = false;
@@ -368,11 +435,11 @@ $("random-btn").addEventListener("click", () => {
 
   // 최근 먹은 메뉴 + 예산 조건으로 후보 필터링
   const recentNames = new Set(recentCache.map((r) => r.n));
-  let candidates = RANDOM_MENUS.filter((m) => !recentNames.has(m.name));
+  let candidates = MENU_DB.filter((m) => !recentNames.has(m.name));
   if (budget > 0) {
     candidates = candidates.filter((m) => m.price * count + 3000 <= budget);
   }
-  if (candidates.length === 0) candidates = RANDOM_MENUS;
+  if (candidates.length === 0) candidates = MENU_DB;
 
   const pick = candidates[Math.floor(Math.random() * candidates.length)];
   const menu = {
